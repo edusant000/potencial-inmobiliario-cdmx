@@ -45,3 +45,5 @@ data/03_primary/
 *.png
 perfil_datos_seguridad.txt
 
+# Ignorar reflexión personal
+reflexion.txt
