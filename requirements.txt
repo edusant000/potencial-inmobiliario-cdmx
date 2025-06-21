@@ -1,0 +1,11 @@
+pandas
+geopandas
+matplotlib
+seaborn
+mapclassify
+folium
+PyYAML
+unidecode
+tqdm
+pyarrow
+scikit-learn

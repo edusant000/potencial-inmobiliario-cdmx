@@ -1,0 +1,109 @@
+# /config/params.yaml
+
+# Parámetros generales del proyecto
+project_name: "potencial-inmobiliario-cdmx"
+crs_proyectado: "EPSG:32614" # Proyección UTM para CDMX (cálculos en metros)
+crs_geografico: "EPSG:4326"  # Proyección estándar para visualización (Folium)
+epsilon: 1e-6 # Valor pequeño para evitar divisiones por cero
+
+# Rutas a los datos de entrada (relativas a la raíz del proyecto)
+paths:
+  input:
+    agebs: "data/01_raw/poligono_ageb_urbanas_cdmx/poligono_ageb_urbanas_cdmx.shp"
+    censo: "data/01_raw/conjunto_de_datos_ageb_urbana_09_cpv2020.csv"
+    unidades_territoriales: "data/01_raw/colonias_cdmx/colonias_iecm.shp"
+  
+  output:
+    intermediate_enriched_agebs: "data/02_intermediate/agebs_enriquecidos.gpkg"
+    primary_dataset: "data/03_primary/unidades_territoriales_final.gpkg"
+    interactive_map: "mapa_interactivo_cdmx.html"
+
+# Variables del censo a utilizar
+census_variables:
+  raw_mapping:
+    cvegeo: 'cvegeo'
+    POBTOT: 'pob_total'
+    GRAPROES: 'escolaridad_promedio'
+    VIVTOT: 'viviendas_totales'
+    VPH_INTER: 'viv_con_internet'
+  
+  numerical_cols: ['pob_total', 'escolaridad_promedio', 'viviendas_totales', 'viv_con_internet']
+  
+  aggregation:
+    pob_total: 'sum'
+    viviendas_totales: 'sum'
+    viv_con_internet: 'sum'
+    escolaridad_promedio: 'mean'
+
+# ===================================================
+# PARÁMETROS PARA EL PROCESAMIENTO DEL DENUE
+# ===================================================
+
+denue:
+  # Rutas de entrada y salida para los datos del DENUE
+  paths:
+    zip_directory: "data/01_raw/DENUE"
+    historical_consolidated: "data/02_intermediate/denue_historico_completo.parquet"
+    cleaned_output: "data/02_intermediate/denue_limpio.parquet"
+
+  # Mapeo para estandarizar nombres de columna a través del tiempo
+  column_mapping:
+    id_denue: ['id', 'llave denue']
+    nombre_establecimiento: ['nom_estab', 'nombre de la unidad economica', 'nombre de la unidad económica']
+    cve_scian: ['codigo_act', 'codigo de la clase de actividad scian', 'código de la clase de actividad scian', 'código de la clase de actividad']
+    personal_ocupado_estrato: ['per_ocu', 'descripcion estrato personal ocupado', 'personal ocupado (estrato)']
+    latitud: ['latitud']
+    longitud: ['longitud']
+    codigo_postal: ['cod_postal', 'codigo postal', 'código postal']
+    cve_ageb: ['ageb', 'area geoestadistica basica', 'área geoestadística básica']
+    fecha_alta: ['fecha_alta', 'fecha de incorporacion al denue', 'fecha de incorporación al denue']
+
+  # Mapeo de excepciones para parsear fechas de nombres de archivo
+  filename_date_exceptions:
+    "denue_09_csv": "2025-05"
+    "denue_inegi_09": "2016-01"
+    "denue_09_25022015_csv": "2015-02"
+
+  # Mapeo para estandarizar los estratos de personal
+  estrato_map:
+    '1': '0-5'
+    '2': '6-10'
+    '3': '11-30'
+    '4': '31-50'
+    '5': '51-100'
+    '6': '101-250'
+    '7': '251 y más'
+    '13': 'No especificado'
+    '0 a 5 personas': '0-5'
+    '6 a 10 personas': '6-10'
+    '11 a 30 personas': '11-30'
+    '31 a 50 personas': '31-50'
+    '51 a 100 personas': '51-100'
+    '101 a 250 personas': '101-250'
+    '251 y mas personas': '251 y más'
+    '251 y más personas': '251 y más'
+    '251 y mas personas': '251 y más'
+    'no especificado': 'No especificado'
+
+# ===================================================
+# PARÁMETROS PARA EL PROCESAMIENTO DE SEGURIDAD
+# ===================================================
+security:
+  paths:
+    # Ajuste la ruta si su archivo tiene otro nombre o ubicación
+    crime_csv: "data/01_raw/Seguridad/carpetasFGJ_acumulado_2025_01.csv"
+  
+  # Lista de delitos considerados de alto impacto para el análisis
+  high_impact_categories:
+    - 'ROBO A TRANSEUNTE EN VÍA PÚBLICA CON Y SIN VIOLENCIA'
+    - 'ROBO DE VEHÍCULO CON Y SIN VIOLENCIA'
+    - 'ROBO A NEGOCIO CON VIOLENCIA'
+    - 'VIOLACIÓN'
+    - 'HOMICIDIO DOLOSO'
+    - 'LESIONES DOLOSAS POR DISPARO DE ARMA DE FUEGO'
+    - 'ROBO A CASA HABITACIÓN CON VIOLENCIA'
+    - 'ROBO A CUENTAHABIENTE SALIENDO DEL CAJERO CON VIOLENCIA'
+    - 'ROBO A REPARTIDOR CON Y SIN VIOLENCIA'
+    - 'SECUESTRO'
+    - 'FEMINICIDIO'
+    - 'PLAGIO O SECUESTRO'

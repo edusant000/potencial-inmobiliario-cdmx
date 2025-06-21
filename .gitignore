@@ -1,0 +1,47 @@
+# Archivos de caché y compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+.env/
+
+# Archivos de configuración de IDEs y editores
+.vscode/
+!.vscode/settings.json  # Excluir este archivo para compartir la configuración del linter
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de dependencias y builds de Python
+dist/
+build/
+*.egg-info/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Archivos de log y bases de datos locales
+*.log
+*.db
+*.sqlite3
+
+# Ignorar todos los datos crudos
+data/01_raw/
+
+# Ignorar los datos intermedios y primarios generados
+data/02_intermediate/
+data/03_primary/
+
+# Ignorar las salidas de visualización y análisis
+*.html
+*.png
+perfil_datos_seguridad.txt
+
