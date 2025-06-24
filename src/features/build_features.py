@@ -33,11 +33,9 @@ def perform_areal_interpolation(units_gdf: gpd.GeoDataFrame, enriched_agebs_gdf:
     logging.info("Calculando pesos de área para la ponderación.")
     intersection_gdf['fragmento_area'] = intersection_gdf.geometry.area
     
-    # --- INICIO DE LA CORRECCIÓN 1 ---
-    #
     # Se asegura de que la columna de área total del AGEB no sea cero para evitar divisiones por cero.
     # También se ponderan tanto las columnas del Censo como las del DENUE.
-    #
+    
     intersection_gdf['ageb_area_total_safe'] = intersection_gdf['ageb_area_total'] + 1e-9
     intersection_gdf['peso_area'] = intersection_gdf['fragmento_area'] / intersection_gdf['ageb_area_total_safe']
 
@@ -52,8 +50,6 @@ def perform_areal_interpolation(units_gdf: gpd.GeoDataFrame, enriched_agebs_gdf:
     if 'escolaridad_promedio' in intersection_gdf.columns and 'pob_total_pond' in intersection_gdf.columns:
         intersection_gdf['escolaridad_x_pob'] = intersection_gdf['escolaridad_promedio'] * intersection_gdf['pob_total_pond']
     
-    # --- FIN DE LA CORRECCIÓN 1 ---
-
     return intersection_gdf
 
 
@@ -61,13 +57,11 @@ def aggregate_to_territorial_units(intersection_gdf: gpd.GeoDataFrame, epsilon: 
     """Agrega TODOS los datos ponderados a nivel de Unidad Territorial."""
     logging.info("Agregando todos los datos a nivel de Unidad Territorial.")
 
-    # --- INICIO DE LA CORRECCIÓN DEFINITIVA (aplicada también aquí por robustez) ---
     try:
         epsilon_float = float(epsilon)
     except (ValueError, TypeError):
         logging.warning(f"Valor de epsilon no válido. Usando 1e-9 por defecto.")
         epsilon_float = 1e-9
-    # --- FIN DE LA CORRECCIÓN DEFINITIVA ---
 
     agg_dict = {
         'pob_total_pond': 'sum',
@@ -104,20 +98,15 @@ def assemble_final_gdf(units_gdf: gpd.GeoDataFrame, aggregated_data: pd.DataFram
     """Ensambla el GeoDataFrame final uniendo geometrías con todos los datos agregados."""
     logging.info("Ensamblando el GeoDataFrame final.")
 
-    # --- INICIO DE LA CORRECCIÓN ---
-    #
     # Se elimina la selección manual de columnas. Ahora se hace un merge de TODAS las columnas
     # del dataframe 'aggregated_data', asegurando que no se pierda ninguna característica.
-    #
     final_gdf = pd.merge(
         units_gdf,
         aggregated_data, # <--- Simplemente pasamos el DataFrame completo
         on='cve_unidad_territorial',
         how='left'
     )
-    #
-    # --- FIN DE LA CORRECCIÓN ---
-    
+
     final_gdf.dropna(subset=['pob_total'], inplace=True) # Mantenemos esta limpieza por si acaso
     
     # Redondeamos solo las columnas que sabemos que existen y son numéricas
@@ -178,16 +167,12 @@ def create_economic_features_at_ageb_level(agebs_gdf: gpd.GeoDataFrame, denue_df
         geometry=gpd.points_from_xy(denue_actual_df.longitud, denue_actual_df.latitud, crs="EPSG:4326")
     ).to_crs(target_crs)
 
-    # --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-    #
     # Se realiza la unión espacial. La primera corrección (tener 'cve_ageb' en agebs_gdf_proj) permite que esta línea se ejecute.
-    #
     gdf_joined = gpd.sjoin(gdf_denue_actual, agebs_gdf_proj[['cve_ageb', 'geometry']], how="inner", predicate='intersects')
     
-    #
+
     # Se manejan los sufijos '_left' y '_right' que 'sjoin' crea debido a la colisión de nombres en 'cve_ageb'.
     # Agrupamos por la clave del polígono ('cve_ageb_right'), que es la fuente geométrica autoritativa.
-    #
     logging.info("Agregando negocios por AGEB y calculando diversidad.")
     features_ageb = gdf_joined.groupby('cve_ageb_right').agg(
         num_negocios=('id_denue', 'count'),
@@ -197,8 +182,6 @@ def create_economic_features_at_ageb_level(agebs_gdf: gpd.GeoDataFrame, denue_df
     # Renombramos el índice del resultado para que vuelva a ser 'cve_ageb' y poder usarlo en el merge.
     features_ageb.index.name = 'cve_ageb'
     features_ageb = features_ageb.reset_index()
-    #
-    # --- FIN DE LA CORRECCIÓN DEFINITIVA ---
     
     # Unir los features calculados de vuelta al GeoDataFrame de AGEBs
     gdf_ageb_con_features = agebs_gdf_proj.merge(features_ageb, on='cve_ageb', how='left').fillna(0)
@@ -215,18 +198,13 @@ def create_security_features_at_ageb_level(agebs_gdf: gpd.GeoDataFrame, crime_df
     """Calcula la tasa de delitos de alto impacto por km² a nivel de AGEB."""
     logging.info("Agregando delitos de alto impacto a nivel de AGEB.")
 
-    # --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-    #
     # Se asegura de que epsilon sea numérico para evitar TypeErrors.
     # Esta es la corrección clave que resuelve el bug persistente.
-    #
     try:
         epsilon_float = float(epsilon)
     except (ValueError, TypeError):
         logging.warning(f"Valor de epsilon no válido. Usando 1e-9 por defecto.")
         epsilon_float = 1e-9
-    #
-    # --- FIN DE LA CORRECCIÓN DEFINITIVA ---
 
     agebs_gdf_proj = agebs_gdf.to_crs(target_crs)
     if 'ageb_area_km2' not in agebs_gdf_proj.columns:
